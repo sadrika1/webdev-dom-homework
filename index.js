@@ -3,32 +3,45 @@ const inputNameElement = document.getElementById("input-name");
 const textareaElement = document.getElementById("textarea-form");
 const commentListElement = document.getElementById("comment-list");
 
-const comments = [
-  {
-    name: "Глеб Фокин",
-    text: "Это будет первый комментарий на этой странице",
-    likes: 3,
-    data: "12.02.22 12:18",
-    paint: "",
-    userLike: false,
-  },
-  {
-    name: "Варвара Н.",
-    text: "Мне нравится как оформлена эта страница! ❤",
-    likes: 75,
-    data: "13.02.22 19:22",
-    paint: "-active-like",
-    userLike: true,
-  },
-];
+let comments = [];
 
+const fetchPromise = fetch(
+  "https://webdev-hw-api.vercel.app/api/v1/dianova-arina/comments",
+  {
+    method: "GET",
+  }
+);
+fetchPromise.then((response) => {
+  const locale = "ru-RU";
+  let todayData = { day: "numeric", month: "numeric", year: "2-digit" };
+  let todayTime = { hour: "numeric", minute: "2-digit" };
+  let userDate = new Date();
+
+  response.json().then((responseData) => {
+    comments = responseData.comments.map((comment) => {
+      return {
+        name: comment?.author?.name,
+        date: `${userDate.toLocaleDateString(
+          locale,
+          todayData
+        )} ${userDate.toLocaleTimeString(locale, todayTime)}`,
+        text: comment.text,
+        likes: comment.likes,
+        isLiked: false,
+      };
+    });
+
+    renderComments();
+  });
+});
 
 const renderComments = () => {
-  const commentsHtml = comments.map((comment, index) => {
-    return `<li class="comment">
+  const commentsHtml = comments
+    .map((comment, index) => {
+      return `<li class="comment">
     <div class="comment-header">
       <div>${comment.name}</div>
-      <div>${comment.data}</div>
+      <div>${comment.date}</div>
     </div>
     <div class="comment-body">
       <div class="comment-text" data-index='${index}'> ${comment.text}</div>
@@ -40,47 +53,45 @@ const renderComments = () => {
       </div>
     </div>
   </li>`;
-  }).join("");
+    })
+    .join("");
 
   commentListElement.innerHTML = commentsHtml;
 
+  // лайки
   const likeButtonElements = document.querySelectorAll(".like-button");
 
   for (const likeButtonElement of likeButtonElements) {
     likeButtonElement.addEventListener("click", () => {
       const index = likeButtonElement.dataset.index;
-        if (comments[index].userLike === false) {
-          comments[index].paint = "-active-like";
-          comments[index].likes += 1;
-          comments[index].userLike = true;
-        } else {
-          comments[index].paint = '';
-          comments[index].likes -= 1;
-          comments[index].userLike = false;
-        }
-      renderComments()
+      if (comments[index].isLiked === false) {
+        comments[index].paint = "-active-like";
+        comments[index].likes += 1;
+        comments[index].isLiked = true;
+      } else {
+        comments[index].paint = "";
+        comments[index].likes -= 1;
+        comments[index].isLiked = false;
+      }
+      renderComments();
     });
   }
-  answerEvent()
+  answerEvent();
 };
 
+// ответ на комментарии при клике
 const answerEvent = () => {
   const answerCommElements = document.querySelectorAll(".comment-text");
   for (const answerCommElement of answerCommElements) {
     answerCommElement.addEventListener("click", () => {
       const index = answerCommElement.dataset.index;
       textareaElement.value = `> ${comments[index].text} \n${comments[index].name}`;
-    })
+    });
   }
-}
+};
 renderComments();
 
-const locale = "ru-RU";
-let todayData = { day: "numeric", month: "numeric", year: "2-digit" };
-let todayTime = { hour: "numeric", minute: "2-digit" };
-let date = new Date();
-
-//
+// красный цвет при пустом поле ввода
 buttonElement.addEventListener("click", () => {
   inputNameElement.classList.remove("error");
   textareaElement.classList.remove("error");
@@ -90,18 +101,55 @@ buttonElement.addEventListener("click", () => {
     return;
   }
 
-  comments.push({
-    name: `${inputNameElement.value.replaceAll('<', '&lt').replaceAll('>', '&gt')}`,
-    text: `${textareaElement.value.replaceAll('<', '&lt').replaceAll('>', '&gt')}`,
-    data: `${date.toLocaleString(locale, todayData)} ${date.toLocaleTimeString(locale, todayTime)}`,
-    likes: 0,
-    paint: '',
-    userLike: false
+  const locale = "ru-RU";
+  let todayData = { day: "numeric", month: "numeric", year: "2-digit" };
+  let todayTime = { hour: "numeric", minute: "2-digit" };
+  let userDate = new Date();
+
+  fetch("https://webdev-hw-api.vercel.app/api/v1/dianova-arina/comments", {
+    method: "POST",
+    body: JSON.stringify({
+      name: inputNameElement.value,
+      text: textareaElement.value,
+      date: `${userDate.toLocaleDateString(
+        locale,
+        todayData
+      )} ${userDate.toLocaleTimeString(locale, todayTime)}`,
+      likes: 0,
+      isLiked: false,
+    }),
+  }).then(() => {
+    const fetchPromise = fetch(
+      "https://webdev-hw-api.vercel.app/api/v1/dianova-arina/comments",
+      {
+        method: "GET",
+      }
+    );
+    fetchPromise.then((response) => {
+      const locale = "ru-RU";
+      let todayData = { day: "numeric", month: "numeric", year: "2-digit" };
+      let todayTime = { hour: "numeric", minute: "2-digit" };
+      let userDate = new Date();
+
+      response.json().then((responseData) => {
+        comments = responseData.comments.map((comment) => {
+          return {
+            name: comment?.author?.name,
+            date: `${userDate.toLocaleDateString(
+              locale,
+              todayData
+            )} ${userDate.toLocaleTimeString(locale, todayTime)}`,
+            text: comment.text,
+            likes: comment.likes,
+            isLiked: false,
+          };
+        });
+
+        renderComments();
+      });
+    });
+
+    inputNameElement.value = "";
+    textareaElement.value = "";
   });
-  
-  renderComments();
-
-  inputNameElement.value = "";
-  textareaElement.value = "";
 });
-
