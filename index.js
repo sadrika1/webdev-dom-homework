@@ -5,35 +5,36 @@ const commentListElement = document.getElementById("comment-list");
 
 let comments = [];
 
-const fetchPromise = fetch(
-  "https://webdev-hw-api.vercel.app/api/v1/dianova-arina/comments",
-  {
-    method: "GET",
-  }
-);
-fetchPromise.then((response) => {
-  const locale = "ru-RU";
-  let todayData = { day: "numeric", month: "numeric", year: "2-digit" };
-  let todayTime = { hour: "numeric", minute: "2-digit" };
-  let userDate = new Date();
-
-  response.json().then((responseData) => {
-    comments = responseData.comments.map((comment) => {
-      return {
-        name: comment?.author?.name,
-        date: `${userDate.toLocaleDateString(
-          locale,
-          todayData
-        )} ${userDate.toLocaleTimeString(locale, todayTime)}`,
-        text: comment.text,
-        likes: comment.likes,
-        isLiked: false,
-      };
+const fetchAndRender = () => {
+  return fetch(
+    "https://webdev-hw-api.vercel.app/api/v1/dianova-arina/comments",
+    {
+      method: "GET",
+    })
+  .then((response) => {
+    const locale = "ru-RU";
+    let todayData = { day: "numeric", month: "numeric", year: "2-digit" };
+    let todayTime = { hour: "numeric", minute: "2-digit" };
+    let userDate = new Date();
+  
+    response.json()
+    .then((responseData) => {
+      comments = responseData.comments.map((comment) => {
+        return {
+          name: comment?.author?.name,
+          date: `${userDate.toLocaleDateString(
+            locale,
+            todayData
+          )} ${userDate.toLocaleTimeString(locale, todayTime)}`,
+          text: comment.text,
+          likes: comment.likes,
+          isLiked: false,
+        };
+      });
+      renderComments();
     });
-
-    renderComments();
   });
-});
+};
 
 const renderComments = () => {
   const commentsHtml = comments
@@ -101,6 +102,10 @@ buttonElement.addEventListener("click", () => {
     return;
   }
 
+  buttonElement.disabled = true;
+  buttonElement.textContent = 'Комментарий добавляется...'
+
+  //
   const locale = "ru-RU";
   let todayData = { day: "numeric", month: "numeric", year: "2-digit" };
   let todayTime = { hour: "numeric", minute: "2-digit" };
@@ -111,45 +116,25 @@ buttonElement.addEventListener("click", () => {
     body: JSON.stringify({
       name: inputNameElement.value,
       text: textareaElement.value,
-      date: `${userDate.toLocaleDateString(
-        locale,
-        todayData
-      )} ${userDate.toLocaleTimeString(locale, todayTime)}`,
+      date: `${userDate.toLocaleDateString(locale,todayData)} ${userDate.toLocaleTimeString(locale, todayTime)}`,
       likes: 0,
       isLiked: false,
-    }),
-  }).then(() => {
-    const fetchPromise = fetch(
+    })
+  })
+  .then(() => {
+    fetch(
       "https://webdev-hw-api.vercel.app/api/v1/dianova-arina/comments",
       {
         method: "GET",
-      }
-    );
-    fetchPromise.then((response) => {
-      const locale = "ru-RU";
-      let todayData = { day: "numeric", month: "numeric", year: "2-digit" };
-      let todayTime = { hour: "numeric", minute: "2-digit" };
-      let userDate = new Date();
-
-      response.json().then((responseData) => {
-        comments = responseData.comments.map((comment) => {
-          return {
-            name: comment?.author?.name,
-            date: `${userDate.toLocaleDateString(
-              locale,
-              todayData
-            )} ${userDate.toLocaleTimeString(locale, todayTime)}`,
-            text: comment.text,
-            likes: comment.likes,
-            isLiked: false,
-          };
-        });
-
-        renderComments();
+      })
+    })
+    .then(() => {
+        return fetchAndRender();
+      })
+    .then(() => {
+        buttonElement.disabled = false;
+        buttonElement.textContent = 'Написать'
+        inputNameElement.value = "";
+        textareaElement.value = "";
       });
-    });
-
-    inputNameElement.value = "";
-    textareaElement.value = "";
-  });
-});
+    })
