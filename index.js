@@ -2,6 +2,8 @@ const buttonElement = document.getElementById("button-form");
 const inputNameElement = document.getElementById("input-name");
 const textareaElement = document.getElementById("textarea-form");
 const commentListElement = document.getElementById("comment-list");
+// const addCommText = document.getElementById('addComments');
+// const addCommElement = document.getElementById('add-comm-text')
 
 let comments = [];
 
@@ -10,22 +12,18 @@ const fetchAndRender = () => {
     "https://webdev-hw-api.vercel.app/api/v1/dianova-arina/comments",
     {
       method: "GET",
-    })
-  .then((response) => {
-    const locale = "ru-RU";
-    let todayData = { day: "numeric", month: "numeric", year: "2-digit" };
-    let todayTime = { hour: "numeric", minute: "2-digit" };
-    let userDate = new Date();
-  
-    response.json()
+    }
+  )
+    .then((response) => response.json())
     .then((responseData) => {
+      const locale = "ru-RU";
+      let todayData = { day: "numeric", month: "numeric", year: "2-digit" };
+      let todayTime = { hour: "numeric", minute: "2-digit" };
+      let userDate = new Date();
       comments = responseData.comments.map((comment) => {
         return {
           name: comment?.author?.name,
-          date: `${userDate.toLocaleDateString(
-            locale,
-            todayData
-          )} ${userDate.toLocaleTimeString(locale, todayTime)}`,
+          date: `${userDate.toLocaleDateString(locale,todayData)} ${userDate.toLocaleTimeString(locale, todayTime)}`,
           text: comment.text,
           likes: comment.likes,
           isLiked: false,
@@ -33,12 +31,10 @@ const fetchAndRender = () => {
       });
       renderComments();
     });
-  });
 };
 
 const renderComments = () => {
-  const commentsHtml = comments
-    .map((comment, index) => {
+  const commentsHtml = comments.map((comment, index) => {
       return `<li class="comment">
     <div class="comment-header">
       <div>${comment.name}</div>
@@ -76,8 +72,8 @@ const renderComments = () => {
       }
       renderComments();
     });
+    answerEvent();
   }
-  answerEvent();
 };
 
 // ответ на комментарии при клике
@@ -93,19 +89,19 @@ const answerEvent = () => {
 renderComments();
 
 // красный цвет при пустом поле ввода
-buttonElement.addEventListener("click", () => {
-  inputNameElement.classList.remove("error");
-  textareaElement.classList.remove("error");
-  if (inputNameElement.value === "" || textareaElement.value === "") {
-    inputNameElement.classList.add("error");
-    textareaElement.classList.add("error");
-    return;
-  }
+// buttonElement.addEventListener("click", () => {
+//   inputNameElement.classList.remove("error");
+//   textareaElement.classList.remove("error");
+//   if (inputNameElement.value === "" || textareaElement.value === "") {
+//     inputNameElement.classList.add("error");
+//     textareaElement.classList.add("error");
+//     return;
+//   }
+// });
 
-  buttonElement.disabled = true;
-  buttonElement.textContent = 'Комментарий добавляется...'
+//
 
-  //
+const newComment = () => {
   const locale = "ru-RU";
   let todayData = { day: "numeric", month: "numeric", year: "2-digit" };
   let todayTime = { hour: "numeric", minute: "2-digit" };
@@ -116,25 +112,40 @@ buttonElement.addEventListener("click", () => {
     body: JSON.stringify({
       name: inputNameElement.value,
       text: textareaElement.value,
-      date: `${userDate.toLocaleDateString(locale,todayData)} ${userDate.toLocaleTimeString(locale, todayTime)}`,
+      date: `${userDate.toLocaleDateString(
+        locale,
+        todayData
+      )} ${userDate.toLocaleTimeString(locale, todayTime)}`,
       likes: 0,
       isLiked: false,
-    })
+    }),
   })
-  .then(() => {
-    fetch(
-      "https://webdev-hw-api.vercel.app/api/v1/dianova-arina/comments",
-      {
-        method: "GET",
-      })
-    })
-    .then(() => {
+    .then((response) => {
+      if (response.status === 500) {
+        return Promise.reject(new Error ("Сервер упал"));
+      } else if (response.status === 400) {
+        return Promise.reject(new Error ("Неправильный ввод"));
+      } else {
         return fetchAndRender();
-      })
-    .then(() => {
-        buttonElement.disabled = false;
-        buttonElement.textContent = 'Написать'
-        inputNameElement.value = "";
-        textareaElement.value = "";
-      });
+      }
     })
+    .then(() => {
+      buttonElement.disabled = false;
+      //buttonElement.textContent = "Написать";
+      inputNameElement.value = "";
+      textareaElement.value = "";
+    })
+    .catch((error) => {
+      buttonElement.disabled = false;
+      if (error === "Сервер упал") {
+        return newComment();
+      }
+      if (error === "Неправильный ввод") {
+        alert("Имя и комментарий должны быть не короче 3 символов");
+      } else {
+        alert("Кажется, у вас сломался интернет, попробуйте позже");
+      }
+    });
+};
+
+buttonElement.addEventListener("click", newComment);
