@@ -32,6 +32,7 @@ const fetchAndRender = () => {
       renderComments();
     });
 };
+fetchAndRender();
 
 const renderComments = () => {
   const commentsHtml = comments.map((comment, index) => {
@@ -136,11 +137,12 @@ const newComment = () => {
       textareaElement.value = "";
     })
     .catch((error) => {
+      console.log(error)
       buttonElement.disabled = false;
-      if (error === "Сервер упал") {
+      if (error.message === "Сервер упал") {
         return newComment();
       }
-      if (error === "Неправильный ввод") {
+      if (error.message === "Неправильный ввод") {
         alert("Имя и комментарий должны быть не короче 3 символов");
       } else {
         alert("Кажется, у вас сломался интернет, попробуйте позже");
