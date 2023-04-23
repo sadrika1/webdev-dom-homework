@@ -1,5 +1,6 @@
 import { loginUser } from "./api.js";
 import { regUser } from "./api.js";
+import _ from 'lodash'
 
 export function renderLoginComponent({ appElement, setToken, fetchAndRender }) {
   let isLoginMode = false;
@@ -75,7 +76,7 @@ export function renderLoginComponent({ appElement, setToken, fetchAndRender }) {
         regUser({
             login: login,
             password: password,
-            name: name,
+            name: _.capitalize(name),
           })
             .then((user) => {
               setToken(`Bearer ${user.user.token}`);

@@ -5,6 +5,7 @@
 
 import { getComments, postComments } from "./api.js";
 import { renderLoginComponent } from "./login-components.js";
+import { format } from "date-fns";
 
 let comments = [];
 let token = "Bearer asb4c4boc86gasb4c4boc86g37w3cc3bo3b83k4g37k3bk3cg3c03ck4k";
@@ -13,17 +14,14 @@ token = null;
 
 const fetchAndRender = () => {
   return getComments({ token }).then((responseData) => {
-    const locale = "ru-RU";
-    let todayData = { day: "numeric", month: "numeric", year: "2-digit" };
-    let todayTime = { hour: "numeric", minute: "2-digit" };
-    let userDate = new Date();
+    const formatDate = (date) => {
+      const createDate = format(new Date(date), 'yyyy-MM-dd hh.mm.ss')
+      return createDate;
+    }
     comments = responseData.comments.map((comment) => {
       return {
         name: comment?.author?.name,
-        date: `${userDate.toLocaleDateString(
-          locale,
-          todayData
-        )} ${userDate.toLocaleTimeString(locale, todayTime)}`,
+        date: `${formatDate(comment.date)}`,
         text: comment.text,
         likes: comment.likes,
         isLiked: false,
@@ -93,19 +91,13 @@ const renderApp = () => {
   const textareaElement = document.getElementById("textarea-form");
 
   const newComment = () => {
-    const locale = "ru-RU";
-    let todayData = { day: "numeric", month: "numeric", year: "2-digit" };
-    let todayTime = { hour: "numeric", minute: "2-digit" };
-    let userDate = new Date();
+    const createDate = format(new Date(date), 'yyyy-MM-dd hh.mm.ss');
 
     postComments({
       token,
       name: inputNameElement.value,
       text: textareaElement.value,
-      date: `${userDate.toLocaleDateString(
-        locale,
-        todayData
-      )} ${userDate.toLocaleTimeString(locale, todayTime)}`,
+      date: `${createDate}`,
     })
       .then((response) => {
         if (response.status === 500) {
