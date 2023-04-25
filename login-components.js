@@ -80,7 +80,7 @@ export function renderLoginComponent({ appElement, setToken, fetchAndRender }) {
           })
             .then((user) => {
               setToken(`Bearer ${user.user.token}`);
-              fetchTodosAndRender();
+              fetchAndRender();
             })
             .catch((error) => {
               alert(error.message);
